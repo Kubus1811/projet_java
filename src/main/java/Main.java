@@ -1,78 +1,284 @@
+import java.io.File;
 import java.time.LocalDate;
+import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
-        System.out.println("==========================================================");
-        System.out.println("   DEMONSTRATION TP2 / TP3 ET TP4 (QUESTION 1)           ");
-        System.out.println("==========================================================\n");
+    private static final String FICHIER_ARTICLES = "articles.txt";
+    private static final String FICHIER_DEPOTS = "depots.txt";
 
-        // 1. Creation de l'etablissement (TP3 - Question 3)
+    public static void main(String[] args) {
+        System.out.println("=== Gestion de la Boutique ===");
+
         Etablissement boutique = new Etablissement("Boutique Solidaire");
 
-        // 2. Ajout des articles d'exemple (TP3 - Question 4.b)
-        System.out.println("--- 1. Ajout des articles au catalogue ---");
+        File fArt = new File(FICHIER_ARTICLES);
+        File fDep = new File(FICHIER_DEPOTS);
+
+        // Chargement si existant, sinon initialisation avec les exemples
+        if (fArt.exists() && fArt.length() > 0) {
+            boutique.depuisFichierArticles(FICHIER_ARTICLES);
+            if (fDep.exists() && fDep.length() > 0) {
+                boutique.depuisFichierDepots(FICHIER_DEPOTS);
+            }
+        } else {
+            System.out.println("Initialisation des donnees d'exemple...");
+            initialiserExemples(boutique);
+            boutique.versFichierArticles(FICHIER_ARTICLES);
+            boutique.versFichierDepots(FICHIER_DEPOTS);
+        }
+
+        Scanner sc = new Scanner(System.in);
+        boolean quitter = false;
+
+        while (!quitter) {
+            afficherMenu();
+            System.out.print("\nChoix : ");
+            String choix = sc.nextLine().trim();
+
+            switch (choix) {
+                case "1":
+                    boutique.afficher();
+                    break;
+
+                case "2":
+                    boutique.lister();
+                    break;
+
+                case "3":
+                    System.out.print("Numero ISBN ou ISSN : ");
+                    String num = sc.nextLine().trim();
+                    Article a = boutique.rechercher(num);
+                    if (a != null) {
+                        System.out.println("Trouve : " + a);
+                    } else {
+                        System.out.println("Aucun article trouve pour : " + num);
+                    }
+                    break;
+
+                case "4":
+                    ajouterLivre(boutique, sc);
+                    break;
+
+                case "5":
+                    ajouterManuel(boutique, sc);
+                    break;
+
+                case "6":
+                    ajouterMagazine(boutique, sc);
+                    break;
+
+                case "7":
+                    System.out.print("Reference ISBN/ISSN : ");
+                    String refAdd = sc.nextLine().trim();
+                    int qteAdd = lireEntier(sc, "Quantite recue : ");
+                    if (boutique.ajouter(refAdd, qteAdd)) {
+                        System.out.println("Stock mis a jour.");
+                    } else {
+                        System.out.println("Erreur : reference introuvable.");
+                    }
+                    break;
+
+                case "8":
+                    System.out.print("Reference ISBN/ISSN : ");
+                    String refRet = sc.nextLine().trim();
+                    int qteRet = lireEntier(sc, "Quantite vendue : ");
+                    if (boutique.retirer(refRet, qteRet)) {
+                        System.out.println("Stock mis a jour.");
+                    } else {
+                        System.out.println("Erreur : stock insuffisant ou reference introuvable.");
+                    }
+                    break;
+
+                case "9":
+                    creerBonDepot(boutique, sc);
+                    break;
+
+                case "10":
+                    System.out.println("\n--- Tous les bons de depot ---");
+                    for (int i = 0; i < boutique.getNbBonsDepot(); i++) {
+                        boutique.getBonsDepot()[i].afficher();
+                    }
+                    if (boutique.getNbBonsDepot() == 0) {
+                        System.out.println("Aucun bon de depot.");
+                    }
+                    break;
+
+                case "11":
+                    System.out.print("Numero de telephone : ");
+                    String tel = sc.nextLine().trim();
+                    boutique.lister(tel);
+                    break;
+
+                case "12":
+                    System.out.print("Reference ISBN ou ISSN : ");
+                    String refRech = sc.nextLine().trim();
+                    LocalDate d1 = lireDate(sc, "Date de debut (AAAA-MM-JJ) : ");
+                    LocalDate d2 = lireDate(sc, "Date de fin (AAAA-MM-JJ) : ");
+                    boutique.lister(refRech, d1, d2);
+                    break;
+
+                case "13":
+                    boutique.versFichierArticles(FICHIER_ARTICLES);
+                    boutique.versFichierDepots(FICHIER_DEPOTS);
+                    break;
+
+                case "0":
+                    System.out.println("Sauvegarde avant fermeture...");
+                    boutique.versFichierArticles(FICHIER_ARTICLES);
+                    boutique.versFichierDepots(FICHIER_DEPOTS);
+                    System.out.println("Au revoir !");
+                    quitter = true;
+                    break;
+
+                default:
+                    System.out.println("Choix invalide.");
+                    break;
+            }
+
+            if (!quitter) {
+                System.out.println("\n[Entree pour continuer]");
+                sc.nextLine();
+            }
+        }
+
+        sc.close();
+    }
+
+    private static void afficherMenu() {
+        System.out.println("\n----------- MENU -----------");
+        System.out.println("1.  Afficher le catalogue");
+        System.out.println("2.  Lister les articles par stock croissant");
+        System.out.println("3.  Rechercher un article");
+        System.out.println("4.  Ajouter un livre");
+        System.out.println("5.  Ajouter un manuel scolaire");
+        System.out.println("6.  Ajouter un magazine");
+        System.out.println("7.  Augmenter le stock d'un article");
+        System.out.println("8.  Diminuer le stock d'un article");
+        System.out.println("9.  Enregistrer un bon de depot");
+        System.out.println("10. Afficher tous les bons de depot");
+        System.out.println("11. Lister les bons d'un client (telephone)");
+        System.out.println("12. Lister les bons d'un article sur une periode");
+        System.out.println("13. Sauvegarder dans les fichiers");
+        System.out.println("0.  Quitter");
+        System.out.println("----------------------------");
+    }
+
+    private static void initialiserExemples(Etablissement boutique) {
         boutique.ajouter("La maison vide", 25.0, 10, "9782707356741", 752);
         boutique.ajouter("Nouvelle grammaire du college", 38.0, 31, "9782210446694", 512, "Francais", "College");
         boutique.ajouter("Geo", 6.50, 20, "00208245", "mensuel", LocalDate.of(2024, 8, 1));
 
-        // Affichage du catalogue (tri automatique par ordre lexicographique)
-        boutique.afficher();
-
-        // 3. Test de la recherche et de la modification de stock (TP3 - Question 4.c)
-        System.out.println("\n--- 2. Recherche et modification directe de stock ---");
-        String refRech = "9782707356741";
-        Article art = boutique.rechercher(refRech);
-        System.out.println("Article recherche (" + refRech + ") : " + art);
-
-        System.out.println("\nAugmentation du stock de 5 exemplaires...");
-        boutique.ajouter(refRech, 5);
-        System.out.println("Apres ajout : " + boutique.rechercher(refRech));
-
-        System.out.println("\nVente (retrait) de 3 exemplaires...");
-        boutique.retirer(refRech, 3);
-        System.out.println("Apres retrait : " + boutique.rechercher(refRech));
-
-        // 4. Test du calcul des prix et reductions (TP3 - Question 4.a)
-        System.out.println("\n--- 3. Calcul des prix et reductions specifiques ---");
-        Article livre = boutique.rechercher("9782707356741");
-        if (livre != null) {
-            LocalDate dateNormale = LocalDate.of(2025, 1, 15);
-            LocalDate dateAvril = LocalDate.of(2025, 4, 23); // Journee mondiale du livre
-            System.out.printf("Prix du livre en janvier : %.2f euros%n", livre.calculerPrix(dateNormale));
-            System.out.printf("Prix du livre en avril (-50%%) : %.2f euros%n", livre.calculerPrix(dateAvril));
-        }
-
-        Article mag = boutique.rechercher("00208245");
-        if (mag != null) {
-            System.out.printf("Prix initial magazine Geo : %.2f euros%n", mag.getPrix());
-            System.out.printf("Prix actuel calcule de Geo : %.2f euros%n", mag.calculerPrix());
-        }
-
-        // 5. Test des bons de depot (TP3 - Question 5)
-        System.out.println("\n--- 4. Creation et enregistrement de bons de depot ---");
         BonDepot bon1 = new BonDepot(1, "061236547890", LocalDate.of(2025, 10, 10));
         bon1.ajouterLigne("9782210446694", 10);
         bon1.ajouterLigne("9782707356741", 20);
+        boutique.insererBonTrie(bon1);
+    }
 
-        System.out.println("Enregistrement du bon 1 dans la boutique (mise a jour automatique du stock)...");
-        boutique.ajouter(bon1);
+    private static void ajouterLivre(Etablissement boutique, Scanner sc) {
+        System.out.println("\n--- Ajout d'un livre ---");
+        System.out.print("Titre : ");
+        String titre = sc.nextLine().trim();
+        double prix = lireDouble(sc, "Prix (euros) : ");
+        int stock = lireEntier(sc, "Stock : ");
+        System.out.print("ISBN : ");
+        String isbn = sc.nextLine().trim();
+        int pages = lireEntier(sc, "Pages : ");
 
-        BonDepot bon2 = new BonDepot(2, "069876543210", LocalDate.of(2025, 10, 15));
-        bon2.ajouterLigne("00208245", 5);
-        boutique.ajouter(bon2);
+        boutique.ajouter(titre, prix, stock, isbn, pages);
+        System.out.println("Livre ajoute.");
+    }
 
-        // 6. Test des methodes de tri et de listing (TP4 - Question 1)
-        System.out.println("\n--- 5. TP4 Question 1 : Affichage des articles par stock croissant ---");
-        boutique.lister();
+    private static void ajouterManuel(Etablissement boutique, Scanner sc) {
+        System.out.println("\n--- Ajout d'un manuel scolaire ---");
+        System.out.print("Titre : ");
+        String titre = sc.nextLine().trim();
+        double prix = lireDouble(sc, "Prix (euros) : ");
+        int stock = lireEntier(sc, "Stock : ");
+        System.out.print("ISBN : ");
+        String isbn = sc.nextLine().trim();
+        int pages = lireEntier(sc, "Pages : ");
+        System.out.print("Matiere : ");
+        String matiere = sc.nextLine().trim();
+        System.out.print("Niveau : ");
+        String niveau = sc.nextLine().trim();
 
-        System.out.println("\n--- 6. TP4 Question 1 : Bons de depot d'un client donne ---");
-        boutique.lister("061236547890");
+        boutique.ajouter(titre, prix, stock, isbn, pages, matiere, niveau);
+        System.out.println("Manuel ajoute.");
+    }
 
-        System.out.println("\n--- 7. TP4 Question 1 : Bons pour un article sur une periode donnee ---");
-        boutique.lister("9782210446694", LocalDate.of(2025, 10, 1), LocalDate.of(2025, 10, 12));
+    private static void ajouterMagazine(Etablissement boutique, Scanner sc) {
+        System.out.println("\n--- Ajout d'un magazine ---");
+        System.out.print("Titre : ");
+        String titre = sc.nextLine().trim();
+        double prix = lireDouble(sc, "Prix (euros) : ");
+        int stock = lireEntier(sc, "Stock : ");
+        System.out.print("ISSN : ");
+        String issn = sc.nextLine().trim();
+        System.out.print("Periodicite (hebdomadaire, mensuel, trimestriel) : ");
+        String periodicite = sc.nextLine().trim();
+        LocalDate date = lireDate(sc, "Date de publication (AAAA-MM-JJ) : ");
 
-        System.out.println("\n==========================================================");
-        System.out.println("   FIN DE LA DEMONSTRATION - TOUS LES TESTS SONT VALIDES ");
-        System.out.println("==========================================================");
+        boutique.ajouter(titre, prix, stock, issn, periodicite, date);
+        System.out.println("Magazine ajoute.");
+    }
+
+    private static void creerBonDepot(Etablissement boutique, Scanner sc) {
+        System.out.println("\n--- Nouveau bon de depot ---");
+        System.out.print("Telephone du deposant : ");
+        String tel = sc.nextLine().trim();
+
+        BonDepot bon = new BonDepot(tel);
+
+        boolean encore = true;
+        while (encore) {
+            System.out.print("Reference de l'article (ISBN ou ISSN) : ");
+            String ref = sc.nextLine().trim();
+            int qte = lireEntier(sc, "Nombre d'exemplaires : ");
+
+            bon.ajouterLigne(ref, qte);
+
+            System.out.print("Autre article pour ce bon ? (o/n) : ");
+            String rep = sc.nextLine().trim();
+            if (!rep.equalsIgnoreCase("o")) {
+                encore = false;
+            }
+        }
+
+        boutique.ajouter(bon);
+        System.out.println("Bon de depot enregistre :");
+        bon.afficher();
+    }
+
+    private static int lireEntier(Scanner sc, String message) {
+        while (true) {
+            System.out.print(message);
+            try {
+                return Integer.parseInt(sc.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Entier invalide, reessayez.");
+            }
+        }
+    }
+
+    private static double lireDouble(Scanner sc, String message) {
+        while (true) {
+            System.out.print(message);
+            try {
+                return Double.parseDouble(sc.nextLine().trim().replace(',', '.'));
+            } catch (NumberFormatException e) {
+                System.out.println("Nombre invalide, reessayez.");
+            }
+        }
+    }
+
+    private static LocalDate lireDate(Scanner sc, String message) {
+        while (true) {
+            System.out.print(message);
+            try {
+                return LocalDate.parse(sc.nextLine().trim());
+            } catch (Exception e) {
+                System.out.println("Date invalide (format attendu AAAA-MM-JJ).");
+            }
+        }
     }
 }

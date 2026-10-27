@@ -23,6 +23,10 @@ public class LigneDepot {
         this.nbExemplaires = nbExemplaires;
     }
 
+    public String versFichier() {
+        return nbExemplaires + " : " + numero;
+    }
+
     @Override
     public String toString() {
         return "Reference: " + numero + " | Nombre d'exemplaires: " + nbExemplaires;

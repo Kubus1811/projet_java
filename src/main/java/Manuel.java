@@ -9,6 +9,13 @@ public class Manuel extends Livre {
         this.niveauScolaire = niveauScolaire;
     }
 
+    @Override
+    public String versFichier() {
+        return this.isbn + System.lineSeparator() +
+               this.description + " : " + this.prix + " : " + this.nbExemplaires + " : " +
+               this.nbPages + " : " + this.matiere + " : " + this.niveauScolaire;
+    }
+
     public String getMatiere() {
         return matiere;
     }

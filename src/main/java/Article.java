@@ -42,6 +42,8 @@ public abstract class Article {
         return calculerPrix(LocalDate.now());
     }
 
+    public abstract String versFichier();
+
     public String getDescription() {
         return description;
     }

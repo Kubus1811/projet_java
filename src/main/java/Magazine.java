@@ -56,6 +56,13 @@ public class Magazine extends Article {
         return this.prix * (1.0 - reduction);
     }
 
+    @Override
+    public String versFichier() {
+        return this.issn + System.lineSeparator() +
+               this.description + " : " + this.prix + " : " + this.nbExemplaires + " : " +
+               this.periodicite + " : " + this.datePublication;
+    }
+
     public String getIssn() {
         return issn;
     }

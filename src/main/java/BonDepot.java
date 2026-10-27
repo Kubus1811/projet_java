@@ -18,7 +18,7 @@ public class BonDepot {
         this(compteurNumero++, telephone, dateEmission);
     }
 
-    // Constructeur complet avec numero (utilise notamment pour initialiser un bon precis)
+    // Utilisé pour recharger un bon depuis un fichier
     public BonDepot(int numero, String telephone, LocalDate dateEmission) {
         this.numero = numero;
         this.telephone = telephone;
@@ -34,7 +34,7 @@ public class BonDepot {
         if (numero == null || nbExemplaires <= 0) {
             return;
         }
-        // Si la reference existe deja dans le bon, on cumule les exemplaires
+        // Si la référence existe déjà dans le bon, on cumule
         for (int i = 0; i < nbLignes; i++) {
             if (lignes[i].getNumero().equalsIgnoreCase(numero.trim())) {
                 lignes[i].setNbExemplaires(lignes[i].getNbExemplaires() + nbExemplaires);
@@ -68,6 +68,18 @@ public class BonDepot {
 
     public void afficher() {
         System.out.println(this.toString());
+    }
+
+    public String versFichier() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.numero).append(System.lineSeparator());
+        sb.append(this.telephone).append(" : ")
+          .append(this.dateEmission).append(" : ")
+          .append(this.nbLignes);
+        for (int i = 0; i < nbLignes; i++) {
+            sb.append(System.lineSeparator()).append(lignes[i].versFichier());
+        }
+        return sb.toString();
     }
 
     public int getNumero() {

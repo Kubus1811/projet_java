@@ -15,13 +15,19 @@ public class Livre extends Article {
         return this.isbn;
     }
 
-    // Reduction de 50% au mois d'avril (23 avril = journee mondiale du livre)
+    // Reduction de 50% au mois d'avril
     @Override
     public double calculerPrix(LocalDate date) {
         if (date != null && date.getMonthValue() == 4) {
             return this.prix * 0.5;
         }
         return this.prix;
+    }
+
+    @Override
+    public String versFichier() {
+        return this.isbn + System.lineSeparator() +
+               this.description + " : " + this.prix + " : " + this.nbExemplaires + " : " + this.nbPages;
     }
 
     public String getIsbn() {
