@@ -1,8 +1,7 @@
 import java.time.LocalDate;
-import java.util.Arrays;
 
 public class BonDepot {
-    private static int compteurNumero = 1;
+    private static int prochainNumero = 1;
 
     private int numero;
     private String telephone;
@@ -11,115 +10,73 @@ public class BonDepot {
     private int nbLignes;
 
     public BonDepot(String telephone) {
-        this(compteurNumero++, telephone, LocalDate.now());
+        this.numero = prochainNumero;
+        prochainNumero++;
+        this.telephone = telephone;
+        this.dateEmission = LocalDate.now();
+        this.lignes = new LigneDepot[20];
+        this.nbLignes = 0;
     }
 
-    public BonDepot(String telephone, LocalDate dateEmission) {
-        this(compteurNumero++, telephone, dateEmission);
-    }
-
-    // Utilisé pour recharger un bon depuis un fichier
+    // bon relu du fichier : le compteur doit depasser son numero
     public BonDepot(int numero, String telephone, LocalDate dateEmission) {
         this.numero = numero;
         this.telephone = telephone;
         this.dateEmission = dateEmission;
         this.lignes = new LigneDepot[20];
         this.nbLignes = 0;
-        if (numero >= compteurNumero) {
-            compteurNumero = numero + 1;
+        if (numero >= prochainNumero) {
+            prochainNumero = numero + 1;
         }
     }
 
-    public void ajouterLigne(String numero, int nbExemplaires) {
-        if (numero == null || nbExemplaires <= 0) {
-            return;
+    public boolean ajouterLigne(String numeroArticle, int nbExemplaires) {
+        if (nbLignes == lignes.length || nbExemplaires <= 0) {
+            return false;
         }
-        // Si la référence existe déjà dans le bon, on cumule
-        for (int i = 0; i < nbLignes; i++) {
-            if (lignes[i].getNumero().equalsIgnoreCase(numero.trim())) {
-                lignes[i].setNbExemplaires(lignes[i].getNbExemplaires() + nbExemplaires);
-                return;
-            }
-        }
-        // Agrandir le tableau si besoin
-        if (nbLignes >= lignes.length) {
-            lignes = Arrays.copyOf(lignes, lignes.length * 2);
-        }
-        lignes[nbLignes++] = new LigneDepot(numero.trim(), nbExemplaires);
+        lignes[nbLignes] = new LigneDepot(numeroArticle, nbExemplaires);
+        nbLignes++;
+        return true;
     }
 
-    public boolean contientArticle(String ref) {
-        if (ref == null) return false;
+    public boolean contientArticle(String numeroArticle) {
         for (int i = 0; i < nbLignes; i++) {
-            if (lignes[i].getNumero().equalsIgnoreCase(ref.trim())) {
+            if (lignes[i].getNumero().equals(numeroArticle)) {
                 return true;
             }
         }
         return false;
     }
 
-    public int getNombreTotalExemplaires() {
-        int total = 0;
-        for (int i = 0; i < nbLignes; i++) {
-            total += lignes[i].getNbExemplaires();
-        }
-        return total;
-    }
-
     public void afficher() {
-        System.out.println(this.toString());
+        System.out.println("Bon no " + numero + " du " + dateEmission + " | tel : " + telephone
+                + " | " + nbLignes + " article(s)");
+        for (int i = 0; i < nbLignes; i++) {
+            System.out.println("    " + lignes[i]);
+        }
     }
 
     public String versFichier() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.numero).append(System.lineSeparator());
-        sb.append(this.telephone).append(" : ")
-          .append(this.dateEmission).append(" : ")
-          .append(this.nbLignes);
+        String texte = numero + System.lineSeparator() + telephone + " : " + dateEmission + " : " + nbLignes;
         for (int i = 0; i < nbLignes; i++) {
-            sb.append(System.lineSeparator()).append(lignes[i].versFichier());
+            texte = texte + System.lineSeparator() + lignes[i].versFichier();
         }
-        return sb.toString();
-    }
-
-    public int getNumero() {
-        return numero;
+        return texte;
     }
 
     public String getTelephone() {
         return telephone;
     }
 
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
-    }
-
     public LocalDate getDateEmission() {
         return dateEmission;
     }
 
-    public void setDateEmission(LocalDate dateEmission) {
-        this.dateEmission = dateEmission;
-    }
-
-    public LigneDepot[] getLignes() {
-        return lignes;
+    public LigneDepot getLigne(int i) {
+        return lignes[i];
     }
 
     public int getNbLignes() {
         return nbLignes;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Bon de depot no ").append(numero).append("\n");
-        sb.append("Client (tel) : ").append(telephone).append("\n");
-        sb.append("Date         : ").append(dateEmission).append("\n");
-        sb.append("Nb articles  : ").append(nbLignes).append(" reference(s) (").append(getNombreTotalExemplaires()).append(" ex. au total)\n");
-        for (int i = 0; i < nbLignes; i++) {
-            sb.append(" - ").append(lignes[i].toString()).append("\n");
-        }
-        return sb.toString();
     }
 }

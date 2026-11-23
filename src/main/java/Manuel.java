@@ -11,36 +11,11 @@ public class Manuel extends Livre {
 
     @Override
     public String versFichier() {
-        return this.isbn + System.lineSeparator() +
-               this.description + " : " + this.prix + " : " + this.nbExemplaires + " : " +
-               this.nbPages + " : " + this.matiere + " : " + this.niveauScolaire;
-    }
-
-    public String getMatiere() {
-        return matiere;
-    }
-
-    public void setMatiere(String matiere) {
-        this.matiere = matiere;
-    }
-
-    public String getNiveauScolaire() {
-        return niveauScolaire;
-    }
-
-    public void setNiveauScolaire(String niveauScolaire) {
-        this.niveauScolaire = niveauScolaire;
+        return super.versFichier() + " : " + matiere + " : " + niveauScolaire;
     }
 
     @Override
     public String toString() {
-        return "[Manuel Scolaire] ISBN: " + isbn +
-               " | Titre: " + description +
-               " | Matiere: " + matiere +
-               " | Niveau: " + niveauScolaire +
-               " | Prix initial: " + String.format("%.2f", prix) + " euros" +
-               " | Prix actuel: " + String.format("%.2f", calculerPrix()) + " euros" +
-               " | Exemplaires: " + nbExemplaires +
-               " | Pages: " + nbPages;
+        return super.toString() + " | " + matiere + " | " + niveauScolaire;
     }
 }

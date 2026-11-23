@@ -1,5 +1,4 @@
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 public class Magazine extends Article {
     private String issn;
@@ -16,85 +15,42 @@ public class Magazine extends Article {
 
     @Override
     public String getNumero() {
-        return this.issn;
+        return issn;
     }
 
-    // Reductions selon anciennete et periodicite
     @Override
     public double calculerPrix(LocalDate date) {
-        if (date == null || datePublication == null) {
-            return this.prix;
+        LocalDate limite50;
+        LocalDate limite75;
+        if (periodicite.equals("hebdomadaire")) {
+            limite50 = datePublication.plusWeeks(2);
+            limite75 = datePublication.plusWeeks(4);
+        } else if (periodicite.equals("mensuel")) {
+            limite50 = datePublication.plusMonths(2);
+            limite75 = datePublication.plusMonths(4);
+        } else if (periodicite.equals("trimestriel")) {
+            // 1 trimestre = 3 mois
+            limite50 = datePublication.plusMonths(6);
+            limite75 = datePublication.plusMonths(12);
+        } else {
+            return prix;
         }
-
-        double reduction = 0.0;
-        String p = periodicite.toLowerCase();
-
-        if (p.startsWith("hebdo")) {
-            long semaines = datePublication.until(date, ChronoUnit.WEEKS);
-            if (semaines >= 4) {
-                reduction = 0.75;
-            } else if (semaines >= 2) {
-                reduction = 0.50;
-            }
-        } else if (p.startsWith("mensuel")) {
-            long mois = datePublication.until(date, ChronoUnit.MONTHS);
-            if (mois >= 4) {
-                reduction = 0.75;
-            } else if (mois >= 2) {
-                reduction = 0.50;
-            }
-        } else if (p.startsWith("trimestr")) {
-            long mois = datePublication.until(date, ChronoUnit.MONTHS);
-            long trimestres = mois / 3;
-            if (trimestres >= 4) {
-                reduction = 0.75;
-            } else if (trimestres >= 2) {
-                reduction = 0.50;
-            }
+        if (date.isAfter(limite75)) {
+            return prix / 4;
         }
-
-        return this.prix * (1.0 - reduction);
+        if (date.isAfter(limite50)) {
+            return prix / 2;
+        }
+        return prix;
     }
 
     @Override
     public String versFichier() {
-        return this.issn + System.lineSeparator() +
-               this.description + " : " + this.prix + " : " + this.nbExemplaires + " : " +
-               this.periodicite + " : " + this.datePublication;
-    }
-
-    public String getIssn() {
-        return issn;
-    }
-
-    public void setIssn(String issn) {
-        this.issn = issn;
-    }
-
-    public String getPeriodicite() {
-        return periodicite;
-    }
-
-    public void setPeriodicite(String periodicite) {
-        this.periodicite = periodicite;
-    }
-
-    public LocalDate getDatePublication() {
-        return datePublication;
-    }
-
-    public void setDatePublication(LocalDate datePublication) {
-        this.datePublication = datePublication;
+        return super.versFichier() + " : " + periodicite + " : " + datePublication;
     }
 
     @Override
     public String toString() {
-        return "[Magazine] ISSN: " + issn +
-               " | Titre: " + description +
-               " | Periodicite: " + periodicite +
-               " | Date publication: " + datePublication +
-               " | Prix initial: " + String.format("%.2f", prix) + " euros" +
-               " | Prix actuel: " + String.format("%.2f", calculerPrix()) + " euros" +
-               " | Exemplaires: " + nbExemplaires;
+        return "ISSN " + issn + " | " + super.toString() + " | " + periodicite + " du " + datePublication;
     }
 }

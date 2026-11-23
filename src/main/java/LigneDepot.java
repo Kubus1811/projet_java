@@ -11,16 +11,8 @@ public class LigneDepot {
         return numero;
     }
 
-    public void setNumero(String numero) {
-        this.numero = numero;
-    }
-
     public int getNbExemplaires() {
         return nbExemplaires;
-    }
-
-    public void setNbExemplaires(int nbExemplaires) {
-        this.nbExemplaires = nbExemplaires;
     }
 
     public String versFichier() {
@@ -29,6 +21,6 @@ public class LigneDepot {
 
     @Override
     public String toString() {
-        return "Reference: " + numero + " | Nombre d'exemplaires: " + nbExemplaires;
+        return nbExemplaires + " exemplaire(s) de " + numero;
     }
 }
