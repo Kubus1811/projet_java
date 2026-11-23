@@ -1,0 +1,747 @@
+\documentclass[11pt,a4paper]{article}
+
+% Compile avec pdfLaTeX, XeLaTeX ou LuaLaTeX.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  \usepackage{fontspec}
+\fi
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes.multipart}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\emergencystretch}{2em}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\lstset{
+  language=Java,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape,
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framesep=4pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  breaklines=true,
+  aboveskip=10pt,
+  belowskip=8pt
+}
+
+\begin{document}
+
+% ------------------------------------------------------------------ page de titre
+\begin{titlepage}
+\centering
+{\large 2\ieme{} année\par}
+\vspace{0.3cm}
+{\large Conception et Programmation Objet\par}
+\vspace{0.3cm}
+{\large Année 2026/2027\par}
+\vfill
+\rule{\textwidth}{0.6pt}\par
+\vspace{0.7cm}
+{\Huge\bfseries Gestion de stock\par}
+\vspace{0.3cm}
+{\Huge\bfseries d'une boutique solidaire\par}
+\vspace{0.7cm}
+{\Large Rapport de TP (TP3 et TP4)\par}
+\vspace{0.7cm}
+\rule{\textwidth}{0.6pt}\par
+\vfill
+% A remplacer par les noms des membres du groupe.
+{\large
+\begin{tabular}{c}
+Prénom NOM \\
+Prénom NOM \\
+Prénom NOM \\
+Prénom NOM \\
+Prénom NOM \\
+\end{tabular}\par}
+\vfill
+{\large Novembre 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ------------------------------------------------------------------ introduction
+\section{Introduction}
+
+Ce rapport présente le travail réalisé pendant les TP3 et TP4 du cours de Conception et
+Programmation Objet. L'objectif était d'écrire en Java un programme en mode console qui gère le
+stock d'une boutique solidaire. Cette boutique récupère des dons de particuliers et des invendus de
+la grande distribution, puis les revend à prix modéré. Elle propose des articles culturels
+d'occasion : des livres, des manuels scolaires et des magazines.
+
+Le rapport suit l'ordre de notre travail. La section~\ref{sec:cahier} résume ce que demande
+l'énoncé. La section~\ref{sec:conception} présente les classes et leurs relations. La
+section~\ref{sec:realisation} explique les parties du code qui nous ont demandé le plus de
+réflexion. La section~\ref{sec:verification} vérifie, question par question, que tout ce qui était
+demandé est réalisé, puis décrit nos tests. La section~\ref{sec:limites} donne les limites du
+programme.
+
+% ------------------------------------------------------------------ cahier des charges
+\section{Cahier des charges}
+\label{sec:cahier}
+
+\subsection{Les articles}
+
+Tous les articles ont une description, un prix initial de vente et un nombre d'exemplaires. Chaque
+type d'article ajoute ses propres informations (tableau~\ref{tab:articles}). Un manuel scolaire est
+un livre particulier : il a tout ce qu'a un livre, avec une matière et un niveau scolaire en plus.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+Type d'article & Numéro & Informations propres \\
+\midrule
+Livre & ISBN (13 chiffres) & nombre de pages \\
+Manuel scolaire & ISBN (13 chiffres) & nombre de pages, matière, niveau scolaire \\
+Magazine & ISSN (8 chiffres) & périodicité, date de publication \\
+\bottomrule
+\end{tabular}
+\caption{Les trois types d'articles}
+\label{tab:articles}
+\end{table}
+
+\subsection{Les prix}
+
+Le prix d'un article dépend de la date (tableau~\ref{tab:prix}). Les livres et les manuels sont à
+moitié prix pendant le mois d'avril. Pour un magazine, la réduction dépend de son ancienneté,
+comptée dans l'unité de sa périodicité.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+Article & Réduction de 50~\% & Réduction de 75~\% \\
+\midrule
+Livre, manuel & pendant le mois d'avril & jamais \\
+Magazine hebdomadaire & publié depuis plus de 2 semaines & depuis plus de 4 semaines \\
+Magazine mensuel & publié depuis plus de 2 mois & depuis plus de 4 mois \\
+Magazine trimestriel & publié depuis plus de 2 trimestres & depuis plus de 4 trimestres \\
+\bottomrule
+\end{tabular}
+\caption{Les réductions de prix}
+\label{tab:prix}
+\end{table}
+
+\subsection{Les bons de dépôt}
+
+À chaque dépôt d'articles, un bon de dépôt est établi. Il contient le numéro de téléphone du
+déposant, la date du dépôt et, pour chaque article déposé, son numéro ISBN ou ISSN et le nombre
+d'exemplaires. Le bon doit être numéroté et daté automatiquement. Selon le cas, l'article déposé
+est ajouté au catalogue ou son nombre d'exemplaires est mis à jour.
+
+\subsection{Les fichiers et le menu}
+
+Les articles et les bons de dépôt sont sauvegardés dans deux fichiers texte dont le format est
+imposé. Le programme principal charge ces fichiers au démarrage, propose un menu qui donne accès
+aux fonctionnalités, puis sauvegarde les données avant de quitter.
+
+\subsection{Les contraintes}
+
+L'énoncé impose les noms des classes et des méthodes. Les données sont stockées dans des tableaux
+de taille limitée. Les dates utilisent la classe \code{LocalDate}. Les fichiers sont écrits avec
+\code{FileWriter} et lus avec \code{FileReader} et \code{BufferedReader}. Il faut aussi éviter de
+mélanger les saisies, les affichages et les traitements dans les méthodes.
+
+% ------------------------------------------------------------------ conception
+\section{Conception}
+\label{sec:conception}
+
+\subsection{Vue d'ensemble}
+
+Le programme compte huit classes, plus une classe \code{Tests}. La figure~\ref{fig:classes} montre
+leurs relations et le tableau~\ref{tab:classes} donne le rôle de chacune.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  classe/.style={draw, rectangle split, rectangle split parts=2, align=center,
+                 font=\small, text width=3.9cm, inner sep=4pt},
+  herite/.style={-{Triangle[open, length=2.6mm, width=2.6mm]}},
+  contient/.style={{Diamond[length=3.2mm, width=1.9mm]}-}]
+\node[classe, text width=5.4cm] (article) at (0,0)
+  {\textbf{Article} \textit{(abstraite)}\nodepart{second} description, prix, nbExemplaires};
+\node[classe] (livre) at (-2.4,-2.5) {\textbf{Livre}\nodepart{second} isbn, nbPages};
+\node[classe] (magazine) at (2.4,-2.5)
+  {\textbf{Magazine}\nodepart{second} issn, periodicite,\\ datePublication};
+\node[classe] (manuel) at (-2.4,-5.0) {\textbf{Manuel}\nodepart{second} matiere, niveauScolaire};
+\node[classe] (etab) at (7.7,0) {\textbf{Etablissement}\nodepart{second} nom,\\ articles, bonsDepot};
+\node[classe] (bon) at (7.7,-2.5)
+  {\textbf{BonDepot}\nodepart{second} numero, telephone,\\ dateEmission, lignes};
+\node[classe] (ligne) at (7.7,-5.0) {\textbf{LigneDepot}\nodepart{second} numero, nbExemplaires};
+\draw[herite] (livre.north) -- (livre.north |- article.south);
+\draw[herite] (magazine.north) -- (magazine.north |- article.south);
+\draw[herite] (manuel.north) -- (livre.south);
+\draw[contient] (etab.west) -- node[above, font=\scriptsize] {100 au plus} (article.east);
+\draw[contient] (etab.south) -- node[right, font=\scriptsize] {100 au plus} (bon.north);
+\draw[contient] (bon.south) -- node[right, font=\scriptsize] {20 au plus} (ligne.north);
+\end{tikzpicture}
+\caption{Les classes du programme. La flèche se lit « hérite de », le losange « contient un
+tableau de ».}
+\label{fig:classes}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+Classe & Rôle \\
+\midrule
+\code{Article} & Classe abstraite : ce qui est commun à tous les articles. \\
+\code{Livre} & Article avec un ISBN et un nombre de pages. \\
+\code{Manuel} & Livre avec une matière et un niveau scolaire. \\
+\code{Magazine} & Article avec un ISSN, une périodicité et une date de publication. \\
+\code{LigneDepot} & Une ligne d'un bon : un numéro d'article et un nombre d'exemplaires. \\
+\code{BonDepot} & Un bon de dépôt : numéro, téléphone, date et lignes. \\
+\code{Etablissement} & La boutique : le tableau des articles et le tableau des bons. \\
+\code{Main} & Le programme principal : menu, saisies et messages. \\
+\code{Tests} & Vérifications des méthodes sur des instances créées à la main. \\
+\bottomrule
+\end{tabularx}
+\caption{Rôle des classes}
+\label{tab:classes}
+\end{table}
+
+\subsection{La hiérarchie des articles}
+
+La classe \code{Article} est abstraite : on ne crée jamais un article « tout court », on crée
+toujours un livre, un manuel ou un magazine. Elle contient les trois attributs communs et les
+méthodes qui ne dépendent pas du type : \code{placerApres}, \code{ajouter} et \code{retirer}.
+
+Deux méthodes sont abstraites, parce que chaque type d'article les réalise à sa façon :
+\code{getNumero}, qui renvoie l'ISBN ou l'ISSN, et \code{calculerPrix}. Grâce à cela, la classe
+\code{Etablissement} manipule un seul tableau d'articles sans se demander de quel type ils sont.
+Par exemple, \code{placerApres} est écrite une seule fois dans \code{Article} :
+
+\begin{lstlisting}
+public boolean placerApres(Article a) {
+    return getNumero().compareTo(a.getNumero()) > 0;
+}
+\end{lstlisting}
+
+\code{Manuel} hérite de \code{Livre}. Il n'a donc pas besoin de redéfinir \code{getNumero} ni
+\code{calculerPrix} : la réduction du mois d'avril écrite dans \code{Livre} s'applique aussi aux
+manuels.
+
+Pour les attributs, \code{description} et \code{nbExemplaires} sont privés. Seul \code{prix} est
+\code{protected}, parce que les sous-classes en ont besoin pour calculer le prix du jour.
+
+\subsection{Les bons de dépôt}
+
+Une \code{LigneDepot} contient le numéro d'un article et un nombre d'exemplaires. Un
+\code{BonDepot} contient un tableau de vingt lignes au plus et un compteur \code{nbLignes}.
+
+La numérotation automatique repose sur un attribut \code{static}, donc partagé par tous les bons.
+Le premier constructeur sert pour un nouveau bon : il prend le numéro suivant et la date du jour.
+
+\begin{lstlisting}
+private static int prochainNumero = 1;
+
+public BonDepot(String telephone) {
+    this.numero = prochainNumero;
+    prochainNumero++;
+    this.telephone = telephone;
+    this.dateEmission = LocalDate.now();
+    this.lignes = new LigneDepot[20];
+    this.nbLignes = 0;
+}
+\end{lstlisting}
+
+Le second constructeur sert à recréer un bon lu dans le fichier, avec son numéro et sa date
+d'origine. Il avance le compteur si nécessaire, pour que le prochain bon créé porte toujours un
+numéro plus grand que tous les bons déjà enregistrés :
+
+\begin{lstlisting}
+if (numero >= prochainNumero) {
+    prochainNumero = numero + 1;
+}
+\end{lstlisting}
+
+\subsection{La classe Etablissement}
+
+La boutique contient deux tableaux de cent cases, chacun avec un compteur : \code{articles} avec
+\code{nbArticles}, et \code{bonsDepot} avec \code{nbBonsDepot}. Le tableau des articles est trié
+par numéro ISBN ou ISSN, le tableau des bons par date d'émission, le plus récent en dernier.
+
+L'énoncé demande plusieurs méthodes qui portent le même nom \code{ajouter}. Elles se distinguent
+par leurs paramètres (tableau~\ref{tab:ajouter}).
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{8.4cm}Y@{}}
+\toprule
+Paramètres de \code{ajouter} & Rôle \\
+\midrule
+description, prix, nbExemplaires, isbn, nbPages & ajoute un livre \\
+les mêmes, puis matiere, niveauScolaire & ajoute un manuel \\
+description, prix, nbExemplaires, issn, periodicite, datePublication & ajoute un magazine \\
+numero, quantite & augmente le stock d'un article \\
+bon & enregistre un bon de dépôt \\
+\bottomrule
+\end{tabularx}
+\caption{Les cinq méthodes \code{ajouter} de la classe \code{Etablissement}}
+\label{tab:ajouter}
+\end{table}
+
+Ces méthodes renvoient un booléen : vrai si l'opération a réussi, faux sinon (tableau plein, numéro
+déjà utilisé, article inconnu). C'est le programme principal qui affiche le message correspondant.
+
+% ------------------------------------------------------------------ realisation
+\section{Réalisation}
+\label{sec:realisation}
+
+\subsection{Insertion dans un tableau trié}
+
+Le tableau des articles doit rester trié par numéro. Plutôt que de trier tout le tableau après
+chaque ajout, nous insérons le nouvel article directement à sa place.
+
+\begin{lstlisting}
+private boolean insererArticle(Article a) {
+    if (nbArticles == articles.length || rechercher(a.getNumero()) != null) {
+        return false;
+    }
+    // on decale vers la droite les articles qui doivent etre apres le nouveau
+    int i = nbArticles;
+    while (i > 0 && articles[i - 1].placerApres(a)) {
+        articles[i] = articles[i - 1];
+        i--;
+    }
+    articles[i] = a;
+    nbArticles++;
+    return true;
+}
+\end{lstlisting}
+
+On commence par vérifier que le tableau n'est pas plein et que le numéro n'existe pas déjà. Ensuite
+on part de la première case libre, à la fin. Tant que l'article qui précède doit être placé après
+le nouveau, on le recopie une case plus loin et on recule. Quand la boucle s'arrête, la case
+\code{i} est libre et c'est la bonne place.
+
+Par exemple, si le tableau contient les numéros \code{00208245}, \code{9782210446694} et
+\code{9782707356741} et que l'on ajoute \code{9782070612758}, les deux derniers articles sont
+décalés d'une case et le nouveau prend la deuxième place.
+
+Les bons de dépôt sont rangés de la même manière dans \code{insererBon}, en comparant les dates
+avec \code{isAfter}. Deux bons de la même date restent dans leur ordre d'arrivée.
+
+\subsection{Calcul des prix}
+
+Pour un livre, le calcul tient en un test sur le mois de la date. Pour un magazine, nous calculons
+deux dates limites à partir de la date de publication, puis nous comparons :
+
+\begin{lstlisting}
+public double calculerPrix(LocalDate date) {
+    LocalDate limite50;
+    LocalDate limite75;
+    if (periodicite.equals("hebdomadaire")) {
+        limite50 = datePublication.plusWeeks(2);
+        limite75 = datePublication.plusWeeks(4);
+    } else if (periodicite.equals("mensuel")) {
+        limite50 = datePublication.plusMonths(2);
+        limite75 = datePublication.plusMonths(4);
+    } else if (periodicite.equals("trimestriel")) {
+        // 1 trimestre = 3 mois
+        limite50 = datePublication.plusMonths(6);
+        limite75 = datePublication.plusMonths(12);
+    } else {
+        return prix;
+    }
+    if (date.isAfter(limite75)) {
+        return prix / 4;
+    }
+    if (date.isAfter(limite50)) {
+        return prix / 2;
+    }
+    return prix;
+}
+\end{lstlisting}
+
+L'énoncé dit « publié depuis \emph{plus de} deux semaines ». Nous l'avons compris au sens strict,
+d'où \code{isAfter} : le jour exact des deux semaines, le magazine est encore à plein tarif, et la
+réduction commence le lendemain.
+
+La méthode reçoit la date en paramètre au lieu d'utiliser directement la date du jour. Cela permet
+de tester le calcul à n'importe quelle date. Pour l'affichage, \code{lister} lui passe
+\code{LocalDate.now()}.
+
+Exemple : le magazine \emph{Geo} de nos données est un mensuel publié le 1\ier{} août 2024. Il a
+dépassé quatre mois depuis longtemps, donc son prix du jour est de $6{,}50 / 4 = 1{,}625$ euro.
+
+\subsection{Consultation : les trois méthodes lister}
+
+\begin{itemize}
+\item \code{lister()} affiche les articles par nombre d'exemplaires croissant, avec leur prix du
+jour. Le tri est un tri à bulles fait sur une copie du tableau, pour ne pas casser le tri par
+numéro du tableau d'origine.
+\item \code{lister(telephone)} affiche les bons d'un client. Comme le tableau des bons est déjà
+trié par date, il suffit de le parcourir.
+\item \code{lister(numero, debut, fin)} affiche les bons qui contiennent un article sur une
+période. Les deux dates limites sont incluses, ce qui s'écrit
+\code{!date.isBefore(debut) \&\& !date.isAfter(fin)}.
+\end{itemize}
+
+\subsection{Sauvegarde dans des fichiers texte}
+
+\subsubsection*{Le format}
+
+Dans le fichier des articles, chaque article occupe deux lignes : son numéro, puis ses informations
+séparées par \code{" : "}. Dans le fichier des bons, chaque bon commence par son numéro, puis une
+ligne d'en-tête (téléphone, date, nombre d'articles), puis une ligne par article déposé.
+
+\begin{lstlisting}[language={}]
+00208245
+Geo : 6.5 : 20 : mensuel : 2024-08-01
+9782210446694
+Nouvelle grammaire du college : 38.0 : 31 : 512 : Francais : College
+9782707356741
+La maison vide : 25.0 : 10 : 752
+\end{lstlisting}
+
+\begin{lstlisting}[language={}]
+1
+061236547890 : 2025-10-10 : 2
+10 : 9782210446694
+20 : 9782707356741
+\end{lstlisting}
+
+\subsubsection*{L'écriture}
+
+Chaque classe a une méthode \code{versFichier} qui renvoie son texte. Dans la hiérarchie des
+articles, chaque classe écrit seulement ce qu'elle ajoute et appelle celle de sa classe mère avec
+\code{super} :
+
+\begin{lstlisting}
+// dans Article
+return getNumero() + System.lineSeparator()
+        + description + " : " + prix + " : " + nbExemplaires;
+// dans Livre
+return super.versFichier() + " : " + nbPages;
+// dans Manuel
+return super.versFichier() + " : " + matiere + " : " + niveauScolaire;
+// dans Magazine
+return super.versFichier() + " : " + periodicite + " : " + datePublication;
+\end{lstlisting}
+
+Dans \code{Etablissement}, \code{versFichierArticles} et \code{versFichierDepots} parcourent leur
+tableau et écrivent chaque élément avec un \code{FileWriter}. Le saut de ligne est écrit entre deux
+éléments seulement, pas à la fin, pour que le fichier ne contienne aucune ligne vide.
+
+\subsubsection*{La relecture}
+
+Le fichier ne dit pas de quel type est un article. Nous le déduisons du nombre d'informations de la
+deuxième ligne, obtenu avec \code{split} :
+
+\begin{lstlisting}
+String[] infos = fichier.readLine().split(" : ");
+String description = infos[0];
+double prix = Double.parseDouble(infos[1]);
+int nbExemplaires = Integer.parseInt(infos[2]);
+// le nombre d'infos donne le type : 4 = livre, 6 = manuel, 5 = magazine
+if (infos.length == 4) {
+    ajouter(description, prix, nbExemplaires, numero, Integer.parseInt(infos[3]));
+} else if (infos.length == 6) {
+    ajouter(description, prix, nbExemplaires, numero, Integer.parseInt(infos[3]),
+            infos[4], infos[5]);
+} else {
+    ajouter(description, prix, nbExemplaires, numero, infos[3],
+            LocalDate.parse(infos[4]));
+}
+\end{lstlisting}
+
+Comme la relecture passe par les méthodes \code{ajouter}, les articles relus sont insérés à leur
+place : le tableau est trié même si le fichier ne l'était pas.
+
+Pour les bons, il y a un piège. Enregistrer un bon augmente le stock des articles déposés. Mais le
+stock écrit dans le fichier des articles tient déjà compte de tous les dépôts passés. À la
+relecture, il ne faut donc pas appeler \code{ajouter(bon)}, sinon chaque dépôt serait compté une
+deuxième fois. \code{depuisFichierDepots} appelle seulement \code{insererBon}, qui range le bon
+dans le tableau sans toucher au stock.
+
+Enfin, comme \code{" : "} sert de séparateur, un texte qui contiendrait ce caractère casserait la
+relecture. Le programme principal refuse donc le caractère « : » dans tous les textes saisis.
+
+\subsection{Programme principal}
+
+La classe \code{Main} crée la boutique, charge les deux fichiers, puis affiche le menu dans une
+boucle jusqu'au choix 0 (tableau~\ref{tab:menu}). Avant de quitter, elle sauvegarde les deux
+fichiers.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}clY@{}}
+\toprule
+Choix & Action & Méthode de \code{Etablissement} \\
+\midrule
+1 & Afficher la boutique & \code{afficher} \\
+2 & Lister les articles par stock & \code{lister()} \\
+3 & Rechercher un article & \code{rechercher} \\
+4 & Ajouter un article (livre, manuel ou magazine) & \code{ajouter}, trois versions \\
+5 & Augmenter un stock & \code{ajouter(numero, quantite)} \\
+6 & Diminuer un stock & \code{retirer} \\
+7 & Enregistrer un bon de dépôt & \code{ajouter(bon)} \\
+8 & Lister les bons d'un client & \code{lister(telephone)} \\
+9 & Lister les bons d'un article sur une période & \code{lister(numero, debut, fin)} \\
+0 & Quitter & \code{versFichierArticles}, \code{versFichierDepots} \\
+\bottomrule
+\end{tabularx}
+\caption{Le menu}
+\label{tab:menu}
+\end{table}
+
+Nous avons séparé les rôles. Toutes les saisies au clavier sont dans \code{Main}. Les autres
+classes font les traitements et renvoient un résultat, et \code{Main} affiche le message.
+
+Les saisies sont contrôlées par quatre petites méthodes : \code{lireTexte}, \code{lireEntier},
+\code{lirePrix} et \code{lireDate}. Chacune redemande la valeur tant qu'elle n'est pas correcte
+(tableau~\ref{tab:saisies}). Une cinquième, \code{lireNumero}, enlève les espaces : un ISBN tapé
+\code{978 2 7073 5674 1} ou \code{9782707356741} désigne ainsi le même article.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{6.2cm}Y@{}}
+\toprule
+Saisie & Réaction du programme \\
+\midrule
+Texte vide & redemandé \\
+Texte contenant « : » & redemandé, c'est le séparateur des fichiers \\
+Lettres à la place d'un nombre & redemandé \\
+Nombre hors limites (choix du menu, quantité, prix) & redemandé, avec les limites \\
+Date mal écrite & redemandée, au format AAAA-MM-JJ \\
+Périodicité inconnue & redemandée \\
+Numéro d'article déjà utilisé & ajout refusé \\
+Retrait supérieur au stock & refusé, le stock ne change pas \\
+\bottomrule
+\end{tabularx}
+\caption{Contrôle des saisies}
+\label{tab:saisies}
+\end{table}
+
+Pour le bon de dépôt (choix 7), le programme demande le téléphone du déposant, puis chaque article
+et sa quantité. Si l'article n'est pas encore au catalogue, il est créé à ce moment-là avec zéro
+exemplaire, et c'est le bon qui apporte les exemplaires déposés. On retrouve ainsi les deux cas de
+l'énoncé : soit l'article est ajouté, soit son nombre d'exemplaires est mis à jour.
+
+% ------------------------------------------------------------------ verification
+\section{Vérification}
+\label{sec:verification}
+
+\subsection{Conformité à l'énoncé}
+
+Le tableau~\ref{tab:conformite} reprend l'énoncé question par question. Toutes les questions du TP3
+et du TP4 sont réalisées.
+
+\begin{longtable}{@{}L{1.6cm}L{5.3cm}L{6.4cm}L{1.0cm}@{}}
+\caption{Conformité à l'énoncé}\label{tab:conformite}\\
+\toprule
+Question & Ce qui est demandé & Ce qui est réalisé & État \\
+\midrule
+\endfirsthead
+\toprule
+Question & Ce qui est demandé & Ce qui est réalisé & État \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{4}{@{}l}{\textbf{TP3}} \\
+1 (a) & Classes \code{Article}, \code{Livre}, \code{Manuel}, \code{Magazine} : attributs,
+constructeurs, \code{toString} & Les quatre classes, avec héritage et \code{toString} dans chacune
+& Fait \\
+1 (b) & Classe \code{LigneDepot} & Numéro, nombre d'exemplaires, constructeur, \code{toString}
+& Fait \\
+2 & Classe \code{BonDepot} : téléphone, date, lignes dans un tableau, numéro unique, affichage
+& Tableau de 20 lignes, compteur \code{static}, méthode \code{afficher} & Fait \\
+3 & Classe \code{Etablissement} : nom, tableaux des articles et des bons, affichage
+& Deux tableaux de 100 cases avec compteurs, méthode \code{afficher} & Fait \\
+4 (a) & \code{getNumero}, \code{placerApres}, \code{ajouter}, \code{retirer}, \code{calculerPrix}
+& Dans \code{Article}, les deux méthodes abstraites sont définies dans \code{Livre} et
+\code{Magazine} & Fait \\
+4 (b) & \code{ajouter} pour un livre, un manuel, un magazine & Trois méthodes \code{ajouter}, avec
+insertion triée par numéro & Fait \\
+4 (c) & \code{rechercher}, \code{ajouter} et \code{retirer} avec un numéro et une quantité
+& \code{rechercher} renvoie l'article ou \code{null}, les deux autres renvoient un booléen
+& Fait \\
+5 (a) & \code{ajouterLigne} dans \code{BonDepot} & Ajoute une ligne, refusée si le bon est plein ou
+la quantité nulle & Fait \\
+5 (b) & \code{ajouter} un bon dans \code{Etablissement}, bons numérotés et datés automatiquement
+& Insertion triée par date, mise à jour du stock, numéro et date fixés par le constructeur
+& Fait \\
+\addlinespace
+\multicolumn{4}{@{}l}{\textbf{TP4}} \\
+1 & Trois méthodes \code{lister} & Articles par stock croissant avec prix du jour, bons d'un
+client, bons d'un article sur une période & Fait \\
+2 (a) & \code{versFichier} dans les articles, \code{LigneDepot} et \code{BonDepot}
+& Une méthode par classe, enchaînées avec \code{super} pour les articles & Fait \\
+2 (b) & \code{versFichierArticles}, \code{depuisFichierArticles} & Écriture avec \code{FileWriter},
+lecture avec \code{FileReader} et \code{BufferedReader} & Fait \\
+2 (c) & \code{versFichierDepots}, \code{depuisFichierDepots} & Mêmes classes, la relecture ne
+modifie pas le stock & Fait \\
+3 & Programme principal : instance, chargement, menu, sauvegarde & Classe \code{Main}, menu de neuf
+choix & Fait \\
+\addlinespace
+\multicolumn{4}{@{}l}{\textbf{Consignes générales}} \\
+& Noms de classes et de méthodes imposés & Tous respectés & Fait \\
+& Stockage dans des tableaux de taille limitée & 100 articles, 100 bons, 20 lignes par bon
+& Fait \\
+& Articles triés par numéro, bons triés par date & Insertion à la bonne place dans les deux
+tableaux & Fait \\
+& Dates avec \code{LocalDate} & Date de publication, date d'émission, calcul des prix & Fait \\
+& Format des deux fichiers & Fichiers produits identiques à l'exemple de l'énoncé & Fait \\
+& Dépôt : article ajouté ou stock mis à jour & Choix 7 : un article inconnu est créé, puis le bon
+met le stock à jour & Fait \\
+& Éviter de mélanger saisies, affichages et traitements & Saisies dans \code{Main} seulement, les
+traitements renvoient un booléen & Fait \\
+& Tester les méthodes en créant des instances & Classe \code{Tests}, 21 vérifications & Fait \\
+\end{longtable}
+
+Une remarque sur la séparation des affichages et des traitements : les méthodes \code{afficher} et
+\code{lister} affichent, puisque c'est leur rôle. Les quatre méthodes de fichiers affichent aussi
+un message quand un fichier est absent ou ne peut pas être écrit. Nous avons gardé ce message à cet
+endroit pour que le programme principal reste court.
+
+\subsection{Choix d'interprétation}
+
+Sur quelques points, l'énoncé laisse un choix. Voici ceux que nous avons faits.
+
+\begin{itemize}
+\item « Plus de deux semaines » est compris au sens strict : la réduction commence le lendemain du
+jour des deux semaines.
+\item Un trimestre vaut trois mois, comptés à partir de la date de publication.
+\item Pour la période de \code{lister}, les deux dates limites sont incluses.
+\item Le prix du jour n'est pas arrondi : il est affiché tel qu'il est calculé.
+\item Les fichiers sont écrits sans ligne vide et sans saut de ligne final, comme dans l'exemple de
+l'énoncé.
+\item À la relecture, les bons ne modifient pas le stock.
+\end{itemize}
+
+\subsection{Tests}
+
+\subsubsection*{La classe Tests}
+
+La classe \code{Tests} crée des instances à la main et compare le résultat de chaque méthode avec
+la valeur attendue. Elle affiche \code{OK} ou \code{ERREUR} pour chaque vérification, puis le
+nombre d'erreurs. Elle contient 21 vérifications (tableau~\ref{tab:tests}), toutes réussies.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{3.6cm}Yc@{}}
+\toprule
+Sujet & Vérifications & Nombre \\
+\midrule
+Prix des livres et des manuels & Plein tarif en janvier, moitié prix en avril & 3 \\
+Prix des magazines & Pour chaque périodicité : le jour du seuil, le lendemain, et le lendemain
+du second seuil & 9 \\
+Stock d'un article & Retrait possible, retrait trop grand refusé, ajout de zéro refusé & 3 \\
+Catalogue & Numéro déjà utilisé refusé, recherche d'un article connu et inconnu, stock d'un
+article inconnu refusé & 4 \\
+Bon de dépôt & Ligne de zéro exemplaire refusée, stock augmenté après le dépôt & 2 \\
+\bottomrule
+\end{tabularx}
+\caption{Les vérifications de la classe \code{Tests}}
+\label{tab:tests}
+\end{table}
+
+\subsubsection*{Les scénarios au clavier}
+
+Nous avons ensuite utilisé le programme comme le ferait le gérant de la boutique
+(tableau~\ref{tab:scenarios}).
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{@{}L{7.0cm}Y@{}}
+\toprule
+Scénario & Résultat \\
+\midrule
+Premier lancement sans aucun fichier & Boutique vide, fichiers créés à la sortie \\
+Chargement des fichiers d'exemple, puis sortie & Fichiers réécrits à l'identique \\
+Ajout d'un livre, d'un manuel et d'un magazine dans le désordre & Catalogue trié par numéro \\
+Augmentation puis diminution d'un stock & Stock mis à jour \\
+Retrait supérieur au stock, article inconnu & Refusé, stock inchangé \\
+Bon de dépôt sur deux articles du catalogue & Bon numéro 2, date du jour, stocks augmentés \\
+Bon de dépôt avec un article inconnu & Article créé, stock égal à la quantité déposée \\
+Fermeture du programme puis relance & Mêmes données, le bon suivant porte le numéro 3 \\
+Saisies incorrectes (tableau~\ref{tab:saisies}) & Message et nouvelle demande, pas d'arrêt du
+programme \\
+Numéro tapé avec des espaces & Le même article est retrouvé \\
+\bottomrule
+\end{tabularx}
+\caption{Scénarios testés avec le menu}
+\label{tab:scenarios}
+\end{table}
+
+Enfin, le programme compile sans aucun avertissement, même avec l'option \code{-Xlint:all} du
+compilateur.
+
+% ------------------------------------------------------------------ limites
+\section{Limites et améliorations possibles}
+\label{sec:limites}
+
+Le programme a des limites que nous connaissons.
+
+\begin{itemize}
+\item Le catalogue est limité à 100 articles, la boutique à 100 bons et un bon à 20 lignes. Ces
+tailles sont fixées à la création des tableaux.
+\item On ne peut ni supprimer un article, ni modifier sa description ou son prix.
+\item Le caractère « : » est interdit dans les textes, parce qu'il sert de séparateur dans les
+fichiers.
+\item La longueur des numéros n'est pas vérifiée : le programme accepte un ISBN qui n'a pas 13
+chiffres.
+\item Les données sont sauvegardées seulement quand on quitte par le choix 0.
+\item Les fichiers sont toujours écrits par le programme. Un fichier modifié à la main et mal formé
+arrête le programme au démarrage.
+\item Les données d'exemple sont écrites sans accents, parce que l'affichage des accents dépend de
+la console utilisée.
+\end{itemize}
+
+Avec plus de temps, nous ajouterions la suppression et la modification d'un article, la vérification
+de la longueur des numéros ISBN et ISSN, et une interface graphique à la place du menu.
+
+% ------------------------------------------------------------------ conclusion
+\section{Conclusion}
+
+Le programme répond à toutes les questions du TP3 et du TP4 : il gère les trois types d'articles,
+calcule les prix avec les réductions, enregistre les bons de dépôt et conserve les données d'une
+exécution à l'autre dans deux fichiers texte au format demandé.
+
+Nous avons cherché à garder un code simple, qui utilise seulement des tableaux et les classes vues
+en cours. Ce projet nous a surtout permis de pratiquer l'héritage et les classes abstraites, de
+voir l'intérêt d'une méthode redéfinie dans chaque sous-classe, et d'apprendre à lire et à écrire
+dans un fichier texte.
+
+% ------------------------------------------------------------------ annexe
+\appendix
+\section{Utilisation du programme}
+
+Le projet est un projet Maven, écrit pour Java 26. Les sources Java sont rangées dans
+\code{src/main/java}.
+
+\begin{itemize}
+\item Dans NetBeans, on ouvre le projet puis on lance \emph{Run Project}. Le menu apparaît dans la
+fenêtre \emph{Output}.
+\item Les fichiers \code{articles.txt} et \code{depots.txt} sont lus et écrits à la racine du
+projet. S'ils n'existent pas, la boutique démarre vide et ils sont créés à la sortie.
+\item Pour lancer les vérifications, on fait un clic droit sur \code{Tests.java}, puis
+\emph{Run File}.
+\end{itemize}
+
+\end{document}
